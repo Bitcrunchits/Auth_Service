@@ -23,6 +23,7 @@ services:
       - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
       - ME_CONFIG_MONGODB_ADMINPASSWORD=admin
       - ME_CONFIG_MONGODB_DATABASE=AuthService
+      - ME_CONFIG_MONGODB_DATABASE=Auth_Service
     ports:
       - "8082:8082"
     networks:
