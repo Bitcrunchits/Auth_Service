@@ -20,7 +20,7 @@ Forma parte del ecosistema de microservicios del proyecto **APP ESCUELA**.
 2. [Arquitectura y Tecnologías](#-arquitectura-y-tecnologías)
 3. [Estructura del Proyecto](#-estructura-del-proyecto)
 4. [Instalación y Ejecución](#️-instalación-y-ejecución)
-5. [Levantar Proyecto con Docker Compose](#-levantar-proyecto-con-docker-compose)
+5. [Levantar Proyecto con Docker Compose](##-Arquitectura de Despliegue (Docker Compose))
 6. [Configuración de Entorno](#-configuración-de-entorno)
 7. [Endpoints Principales](#-endpoints-principales)
 8. [Pruebas de API (Postman)](#-pruebas-de-api-postman)
