@@ -1,5 +1,7 @@
 version: '3.9'
+
 services:
+  # 1. SERVICIO DE BASE DE DATOS: MongoDB
   mongo-server:
     image: mongo:4.4
     container_name: mongo-server
@@ -10,6 +12,8 @@ services:
       - mongodb_data:/data/db
     networks:
       - mongodb_network
+
+  # 2. SERVICIO DE GESTIÓN WEB DE MONGO: Mongo Express
   mongo-client:
     image: mongo-express:latest
     container_name: mongo-client
@@ -17,6 +21,7 @@ services:
     depends_on:
       - mongo-server
     environment:
+      # CRÍTICO: Usa el nombre del servicio (mongo-server), NO localhost
       - ME_CONFIG_MONGODB_SERVER=mongo-server
       - ME_CONFIG_MONGODB_PORT=27017
       - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
@@ -27,7 +32,32 @@ services:
       - "8082:8082"
     networks:
       - mongodb_network
+      
+  # 3. SERVICIO DE BACKEND: Aplicación Node.js (construida a partir del Dockerfile)
+  backend-node:
+    build: .
+    container_name: backend-node
+    restart: always
+    # Acceso a tu API desde http://localhost:3000
+    ports:
+      - "3000:3000" 
+    command: node src/index.js
+    # Montaje para desarrollo en tiempo real
+    volumes:
+      - .:/app
+      - /app/node_modules 
+    
+    # Conexión a la red de la base de datos
+    networks:
+      - mongodb_network
+    
+    # Iniciar después del servidor de Mongo
+    depends_on:
+      - mongo-server
+
 volumes:
   mongodb_data:
+
 networks:
   mongodb_network:
+    driver: bridge

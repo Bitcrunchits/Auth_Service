@@ -1,0 +1,29 @@
+Este archivo indica a Docker qué archivos y carpetas debe ignorar al
+
+ejecutar el comando 'COPY . .', optimizando la imagen y protegiendo secretos.
+
+1. DEPENDENCIAS (CRUCIAL)
+
+Excluye la carpeta 'node_modules' de tu máquina local.
+
+Las dependencias se instalan limpiamente dentro del contenedor (con 'npm install'),
+
+lo que asegura que sean las versiones correctas para el entorno Alpine.
+
+node_modules
+
+2. VARIABLES DE ENTORNO
+
+Excluye tu archivo de variables de entorno local.
+
+Estas variables deben ser pasadas de forma segura durante el despliegue.
+
+.env
+
+3. METADATOS Y CACHÉ
+
+Excluye directorios de control de versiones y archivos temporales.
+
+.git
+.gitignore
+npm-debug.log
