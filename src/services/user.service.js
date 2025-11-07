@@ -198,8 +198,8 @@ async syncAlumnosAndNotify() {
     }
   }
 
-  async login(email, password) {
-    const user = await this.model.findOne({ email, estado: 'active' }).select('+password');
+  async login(dni, password) {
+    const user = await this.model.findOne({ dni, estado: 'active' }).select('+password');
     if (!user) {
       return null;
     }
