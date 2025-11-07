@@ -16,19 +16,23 @@ Forma parte del ecosistema de microservicios del proyecto **APP ESCUELA**.
 ---
 
 ## 📚 Tabla de Contenidos
-1. [Descripción General](#-descripción-general)
-2. [Arquitectura y Tecnologías](#-arquitectura-y-tecnologías)
-3. [Estructura del Proyecto](#-estructura-del-proyecto)
-4. [Instalación y Ejecución](#️-instalación-y-ejecución)
-5. [Levantar Proyecto con Docker Compose](##-Arquitectura de Despliegue (Docker Compose))
-6. [Configuración de Entorno](#-configuración-de-entorno)
-7. [Endpoints Principales](#-endpoints-principales)
-8. [Pruebas de API (Postman)](#-pruebas-de-api-postman)
-9. [Buenas Prácticas y Estilo](#-buenas-prácticas-y-estilo)
-10. [Tests y Cobertura](#-tests-y-cobertura)
-11. [Contribución](#-contribución)
-12. [Licencia](#-licencia)
-13. [Autor](#-autor)
+
+1. [Descripción General](#descripción-general)
+2. [Arquitectura y Tecnologías](#arquitectura-y-tecnologías)
+3. [Estructura del Proyecto](#estructura-del-proyecto)
+4. [Instalación y Ejecución](#instalación-y-ejecución)
+5. [Levantar Proyecto con Docker Compose](#arquitectura-de-despliegue-docker-compose)
+6. [Configuración de Entorno](#configuración-de-entorno)
+7. [Endpoints Principales](#endpoints-principales)
+8. [Pruebas de API (Postman)](#pruebas-de-api-postman)
+    * [8.1 Registro de Nuevo Usuario](#1-registro-de-nuevo-usuario)
+    * [8.2 Inicio de Sesión (Obtener Token JWT)](#2-inicio-de-sesión-obtener-token-jwt)
+    * [8.3 Acceso a Perfil del Usuario Logueado (Ruta Protegida)](#3-acceso-a-perfil-del-usuario-logueado-ruta-protegida)
+9. [Buenas Prácticas y Estilo](#buenas-prácticas-y-estilo)
+10. [Tests y Cobertura](#tests-y-cobertura)
+11. [Contribución](#contribución)
+12. [Licencia](#licencia)
+13. [Autor](#autor)
 
 
 ---
