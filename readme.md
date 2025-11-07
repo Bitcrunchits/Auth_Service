@@ -20,13 +20,16 @@ Forma parte del ecosistema de microservicios del proyecto **APP ESCUELA**.
 2. [Arquitectura y Tecnologías](#-arquitectura-y-tecnologías)
 3. [Estructura del Proyecto](#-estructura-del-proyecto)
 4. [Instalación y Ejecución](#️-instalación-y-ejecución)
-5. [Configuración de Entorno](#-configuración-de-entorno)
-6. [Endpoints Principales](#-endpoints-principales)
-7. [Buenas Prácticas y Estilo](#-buenas-prácticas-y-estilo)
-8. [Tests y Cobertura](#-tests-y-cobertura)
-9. [Contribución](#-contribución)
-10. [Licencia](#-licencia)
-11. [Autor](#-autor)
+5. [Levantar Proyecto con Docker Compose](#-levantar-proyecto-con-docker-compose)
+6. [Configuración de Entorno](#-configuración-de-entorno)
+7. [Endpoints Principales](#-endpoints-principales)
+8. [Pruebas de API (Postman)](#-pruebas-de-api-postman)
+9. [Buenas Prácticas y Estilo](#-buenas-prácticas-y-estilo)
+10. [Tests y Cobertura](#-tests-y-cobertura)
+11. [Contribución](#-contribución)
+12. [Licencia](#-licencia)
+13. [Autor](#-autor)
+
 
 ---
 
@@ -125,11 +128,224 @@ Ejecutar los tests con:
 
 npm test
 
+# 🔐 Microservicio de Autenticación (Auth Service)
 
-Se incluyen pruebas unitarias y de integración utilizando Jest + Supertest.
-La cobertura puede generarse con:
+Este microservicio gestiona el **registro**, **inicio de sesión** y la **sincronización de usuarios** con el sistema CORE utilizando **DNI** y **Contraseña**.  
+Se encuentra **dockerizado** para asegurar un entorno de ejecución estable y despliegue consistente.
 
-npm run test:coverage
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+## 🧱 Arquitectura de Despliegue (Docker Compose)
+
+Este servicio se ejecuta mediante **Docker Compose**, el cual orquesta tres contenedores:
+
+| Servicio        | Descripción |
+|----------------|-------------|
+| **backend-node** | Microservicio Node.js (Express) encargado de la autenticación y cliente de CORE y Notificaciones. |
+| **mongo-server** | Base de datos MongoDB (oficial) donde se almacenan los usuarios. |
+| **mongo-client** | Herramienta visual (Mongo Express) para consultar y administrar la base de datos. |
+
+---
+
+## 🚀 Inicio Rápido
+
+### 1. Requisitos
+
+Asegúrate de tener instalado:
+
+- Docker
+- Docker Compose (o Docker Desktop)
+
+### 2. Construcción y Ejecución
+
+Ejecuta el siguiente comando para construir las imágenes y levantar los contenedores:
+sudo docker-compose up -d --build
+
+3. Verificación de Estado
+sudo docker-compose ps
+
+Salida esperada:
+| Name         | Command              | State | Ports                 |
+| ------------ | -------------------- | ----- | --------------------- |
+| backend-node | node src/index.js    | Up    | 0.0.0.0:3000→3000/tcp |
+| mongo-server | docker-entrypoint.sh | Up    | 27017/tcp             |
+| mongo-client | tini -- /docker-ent… | Up    | 0.0.0.0:8081→8081/tcp |
+
+4. Acceso a Servicios
+| Servicio      | URL                                            | Descripción                                  |
+| ------------- | ---------------------------------------------- | -------------------------------------------- |
+| Backend API   | [http://localhost:3000](http://localhost:3000) | Punto de entrada del microservicio.          |
+| Mongo Express | [http://localhost:8081](http://localhost:8081) | Panel visual para administración de MongoDB. |
+
+💻 Pruebas Locales del Frontend
+
+Para probar el flujo de autenticación completo (Login con DNI), se utiliza un cliente estático en HTML/JavaScript.
+
+Ubicación del Archivo
+
+El archivo de prueba se encuentra en la ruta:
+
+PROYECTOMICROSERVICIOS/Atuth_Service-Front/login.html
+
+
+Ejecución de la Prueba
+
+Iniciar el Backend: Asegúrate de que el backend esté corriendo correctamente con Docker Compose (ver sección Inicio Rápido).
+
+Abrir el Frontend: Usa una extensión de servidor local para VS Code (como Live Server) para abrir el archivo login.html.
+
+Acceso Directo: La URL local para el login será similar a: http://127.0.0.1:5500/Atuth_Service-Front/login.html
+
+Puntos a Verificar en el Login
+
+Usuario: Se debe ingresar el DNI del usuario (no el email).
+
+Contraseña: La contraseña debe coincidir con la registrada.
+
+Petición: El JavaScript del login.html debe estar configurado para apuntar a la URL del backend expuesta por Docker: http://localhost:3000/api/auth/login.
+
+## 🧪 Pruebas de API (Postman)
+
+Todas las pruebas deben realizarse contra el puerto expuesto por Docker Compose:
+
+http://localhost:3000
+---
+
+### 1. Registro de Nuevo Usuario
+
+Esta ruta permite crear usuarios de prueba antes de probar el login.
+
+| Detalle | Configuración |
+|--------|---------------|
+| **Método** | POST |
+| **Ruta** | `http://localhost:3000/api/auth/register` |
+| **Autenticación** | **No Auth** (Público) |
+| **Body (JSON)** | Se requiere `nombre`, `email`, `password`, `dni`, `rol` |
+
+**Cuerpo de la petición:**
+
+```json
+{
+  "nombre": "Prueba Registro Admin",
+  "email": "admin@registro.com",
+  "password": "PasswordSeguro123",
+  "dni": "12345678",
+  "rol": "admin"
+}
+
+Respuesta esperada (201 Created):
+{
+  "message": "Usuario registrado exitosamente.",
+  "user": {
+    "id": "690a91f71bd468a5422688e9",
+    "nombre": "Prueba Registro Admin",
+    "email": "admin@registro.com",
+    "rol": "admin",
+    "dni": "12345678"
+  }
+}
+
+2. Inicio de Sesión (Obtener Token JWT)
+
+Ruta principal de login. Devuelve un token válido para usar en rutas protegidas.
+
+| Detalle           | Configuración                          |
+| ----------------- | -------------------------------------- |
+| **Método**        | POST                                   |
+| **Ruta**          | `http://localhost:3000/api/auth/login` |
+| **Autenticación** | **No Auth** (Público)                  |
+| **Body (JSON)**   | Se requiere `email` y `password`       |
+
+Cuerpo de la petición:
+
+{
+  "dni": "12345678",
+  "password": "PasswordSeguro123"
+}
+
+Respuesta esperada (200 OK):
+{
+  "message": "Login exitoso.",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9....",
+  "user": {
+    "_id": "690a91f71bd468a5422688e9",
+    "nombre": "Prueba Registro Admin",
+    "email": "admin@registro.com",
+    "rol": "admin",
+    "estado": "active",
+    "dni": "12345678",
+    "createdAt": "2025-11-04T23:53:27.299Z",
+    "updatedAt": "2025-11-04T23:53:27.299Z"
+  }
+}
+
+3. Acceso a Perfil del Usuario Logueado (Ruta Protegida)
+
+Confirma que el middleware JWT está funcionando correctamente.
+| Detalle           | Configuración                                    |
+| ----------------- | ------------------------------------------------ |
+| **Método**        | GET                                              |
+| **Ruta**          | `http://localhost:3000/api/users/profile`        |
+| **Autenticación** | **Bearer Token** → usar token obtenido del login |
+| **Body**          | Ninguno                                          |
+
+Respuesta esperada (200 OK):
+{
+  "message": "Acceso concedido al perfil.",
+  "user": {
+    "_id": "690a91f71bd468a5422688e9",
+    "nombre": "Prueba Registro Admin",
+    "email": "admin@registro.com",
+    "rol": "admin",
+    "estado": "active",
+    "dni": "12345678",
+    "createdAt": "2025-11-04T23:53:27.299Z",
+    "updatedAt": "2025-11-04T23:53:27.299Z"
+  },
+  "rol": "admin"
+}
+
+
+
+
+
+
+⚙️ Configuración y Variables de Entorno
+
+El contenedor backend-node lee las variables del .env y docker-compose.yml.
+
+Variable	Descripción	Ejemplo / Valor
+PORT	Puerto del backend	3000
+MONGO_DB	Nombre de la DB	auth_db
+MONGODB_URI	URI de conexión	mongodb://mongo-server:27017/auth_db
+JWT_SECRET	Clave para firmar tokens	(Secreto)
+
+Nota importante: En Docker Compose, la URI debe usar el nombre del servicio:
+mongodb://mongo-server:27017/auth_db
+
+🔒 Lógica de Autenticación (Flujo Final)
+
+Se realizaron ajustes para que el login utilice DNI:
+
+Componente	Cambio Aplicado
+Frontend (Login JS)	Envía el campo dni en lugar de email.
+Backend (Controller)	Extrae dni del body de la request.
+Backend (Service)	Busca al usuario por dni en MongoDB.
+
+Esto asegura autenticación basada en DNI + Contraseña.
+
+🗑️ Limpieza
+
+Detener y eliminar contenedores:
+
+sudo docker-compose down
+
+
+Eliminar contenedores y volúmenes (borra la base de datos):
+
+sudo docker-compose down -v
+
+-----------------------------------------------------------------------------------------------------
 
 🤝 Contribución
 
@@ -156,10 +372,6 @@ Consulta el archivo LICENSE
 
 Ricardo Burdiles
 Desarrollador Backend | Node.js + Express
-
-📧 contacto: ricardo.burdiles@example.com
-
-🌐 GitHub: @ricardoburdiles
 
 ⭐ Si este proyecto te fue útil, no olvides dejar una estrella en el repositorio.
 ¡Gracias por tu apoyo! 🙌
