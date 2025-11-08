@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma Educativa - Acceso</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de color (usando un esquema azul/profesional) -->
+    <style>
+        :root {
+            --color-primary: #1a4cee; /* Azul oscuro para énfasis */
+            --color-secondary: #059669; /* Verde para registro/éxito */
+            --color-admin: #1e88cf; /* Rojo oscuro para gestión */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        'primary-dark': '#1e3a8a',
+                        accent: '#3b82f6',
+                        'admin-button': '#991b1b', /* Rojo para Admin */
+                        'admin-hover': '#7f1d1d',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gray-50 bg-gradient-to-br from-gray-700 to-gray-200">
+
+    <!-- Contenedor Principal (Tarjeta Centrada) -->
+    <div id="app-container" class="w-full max-w-lg bg-white rounded-xl shadow-2xl p-8 transition-all duration-300">
+
+        <!-- Área de Login de Estudiantes/Usuarios -->
+        <div id="login-screen" class="space-y-6">
+            <h1 class="text-3xl font-extrabold text-gray-800 text-center">APP ESCUELA - Microservicio de Auth_Service</h1>
+            <p class="text-center text-gray-500">Ingresa tus credenciales de Estudiante o Docente.</p>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="dni" class="block text-sm font-medium text-gray-700 mb-1">DNI o Usuario</label>
+                    <input type="text" id="dni" name="dni" required placeholder="Tu número de DNI"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="password" name="password" required placeholder="••••••••"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150">
+                </div>
+
+                <div id="message-box" class="text-center text-sm font-semibold h-5"></div>
+
+                <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150">
+                    Ingresar como Usuario
+                </button>
+            </form>
+            <p class="text-center text-gray-500 px-4 py-1">Acceso solo a personal administración o secretaría</p>
+            <button id="admin-access-button"
+                    class="w-full mt-4 flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-admin-button hover:bg-admin-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-admin-button transition duration-150">
+                Acceso Admin y Secretaría (Registros)
+            </button>
+        </div>
+
+        <!-- Área de Dashboard (Post-Login Estudiante/Usuario) -->
+        <div id="dashboard-screen" class="hidden space-y-8 text-center">
+            <div class="space-y-2">
+                <svg class="w-16 h-16 mx-auto text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.97 8.97 0 01-4.5 1.207"></path></svg>
+                <h2 class="text-4xl font-extrabold text-gray-800">¡Bienvenido(a) a la Demo!</h2>
+                <p id="welcome-user" class="text-xl font-medium text-primary-dark">...</p>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-primary p-4 rounded-lg shadow-inner">
+                <p class="text-gray-700 leading-relaxed font-semibold">
+                    Acceso exitoso. Este es el Dashboard de Estudiante/Docente.
+                </p>
+                <p class="mt-2 text-sm text-gray-600">Punto de inicio para la navegación al servicio de Core.</p>
+            </div>
+
+            <button onclick="alert('Simulación: Accediendo al Servicio Core con el Token JWT...')"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-md text-base font-semibold text-white bg-green-500 hover:bg-green-600 transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Acceder al Servicio Core (Demo)
+            </button>
+
+            <button id="logout-button" data-target="dashboard"
+                    class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300">
+                Cerrar Sesión
+            </button>
+        </div>
+        
+        <!-- Área de Gestión Administrativa -->
+        <div id="admin-dashboard-screen" class="hidden space-y-8">
+            <h2 class="text-3xl font-extrabold text-admin-button text-center">Gestión de Secretaría</h2>
+            <p class="text-center text-gray-600">Selecciona el tipo de registro a realizar.</p>
+
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Botón de Registro Manual -->
+                <button onclick="navigateTo('manual-registration-screen')"
+                        class="p-6 bg-admin-button text-white rounded-xl shadow-lg hover:bg-admin-hover transition duration-150 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-red-300">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span class="text-xl font-bold">Registro Manual de Usuario</span>
+                        <span class="text-sm opacity-80 mt-1">Alta individual de estudiantes o personal.</span>
+                    </div>
+                </button>
+
+                <!-- Botón de Registro Masivo (Demo) -->
+                <button onclick="alert('Funcionalidad de Registro Masivo (Subida de CSV/Excel) en Desarrollo...')"
+                        class="p-6 bg-gray-400 text-white rounded-xl shadow-lg hover:bg-gray-500 transition duration-150 ease-in-out transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-gray-300">
+                    <div class="flex flex-col items-center">
+                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        <span class="text-xl font-bold">Registro Masivo (CSV/Excel)</span>
+                        <span class="text-sm opacity-80 mt-1">Para grandes volúmenes de usuarios.</span>
+                    </div>
+                </button>
+            </div>
+
+            <button onclick="navigateTo('login-screen')"
+                    class="w-full mt-4 flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition duration-150">
+                &larr; Volver al Login Principal
+            </button>
+        </div>
+
+        <!-- Área de Registro Manual -->
+        <div id="manual-registration-screen" class="hidden space-y-6">
+            <h2 class="text-3xl font-extrabold text-admin-button text-center">Registro Manual</h2>
+            <p class="text-center text-gray-600">Completa todos los campos para dar de alta un nuevo usuario.</p>
+
+            <form id="register-form" class="space-y-4">
+                <!-- Nombre -->
+                <div>
+                    <label for="reg-nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
+                    <input type="text" id="reg-nombre" name="nombre" required placeholder="Nombre Apellido"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-admin-button focus:border-admin-button transition">
+                </div>
+                <!-- DNI -->
+                <div>
+                    <label for="reg-dni" class="block text-sm font-medium text-gray-700 mb-1">DNI</label>
+                    <input type="text" id="reg-dni" name="dni" required placeholder="Ej: 12345678"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-admin-button focus:border-admin-button transition">
+                </div>
+                <!-- Email -->
+                <div>
+                    <label for="reg-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="reg-email" name="email" required placeholder="correo@ejemplo.com"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-admin-button focus:border-admin-button transition">
+                </div>
+                <!-- Password -->
+                <div>
+                    <label for="reg-password" class="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="reg-password" name="password" required placeholder="Contraseña segura"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-admin-button focus:border-admin-button transition">
+                </div>
+                <!-- Rol -->
+                <div>
+                    <label for="reg-rol" class="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+                    <select id="reg-rol" name="rol" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-admin-button focus:border-admin-button transition">
+                        <option value="alumno" selected>Estudiante</option>
+                        <option value="profesor">Docente</option>
+                        <option value="admin">Administrador</option>
+                        <option value="secretaria">Secretaría</option>
+                    </select>
+                </div>
+
+                <div id="register-message-box" class="text-center text-sm font-semibold h-5"></div>
+
+                <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 transition">
+                    Registrar Nuevo Usuario
+                </button>
+            </form>
+
+            <button onclick="navigateTo('admin-dashboard-screen')"
+                    class="w-full mt-4 flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition">
+                &larr; Volver a Gestión
+            </button>
+        </div>
+
+        <!-- Spinner de Carga (Global) -->
+        <div id="loading-spinner" class="hidden text-center p-10">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p class="mt-4 text-gray-600">Procesando...</p>
+        </div>
+
+    </div>
+
+    <script>
+        // **AJUSTAR ESTA URL a tu backend**
+        const API_BASE_URL = 'http://localhost:3000/api'; 
+        const TOKEN_KEY = 'authToken';
+
+        // Elementos de pantalla
+        const screens = {
+            'login-screen': document.getElementById('login-screen'),
+            'dashboard-screen': document.getElementById('dashboard-screen'),
+            'admin-dashboard-screen': document.getElementById('admin-dashboard-screen'),
+            'manual-registration-screen': document.getElementById('manual-registration-screen'),
+        };
+
+        // Elementos de formulario/mensajes
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const logoutButton = document.getElementById('logout-button');
+        const adminAccessButton = document.getElementById('admin-access-button');
+        const messageBox = document.getElementById('message-box');
+        const registerMessageBox = document.getElementById('register-message-box');
+        const welcomeUser = document.getElementById('welcome-user');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        let currentScreen = 'login-screen';
+
+        // --- Funciones de Navegación y UI ---
+
+        /**
+         * Muestra una pantalla y oculta las demás. Muestra/oculta el spinner si es necesario.
+         * @param {string} targetScreen - ID de la pantalla a mostrar.
+         * @param {boolean} showSpinner - Si se debe mostrar el spinner antes de la transición.
+         */
+        function navigateTo(targetScreen, showSpinner = false) {
+            loadingSpinner.classList.toggle('hidden', !showSpinner);
+            
+            Object.keys(screens).forEach(key => {
+                screens[key].classList.add('hidden');
+            });
+
+            if (!showSpinner) {
+                screens[targetScreen].classList.remove('hidden');
+                currentScreen = targetScreen;
+            }
+        }
+
+        /**
+         * Muestra la pantalla de Dashboard (post-login) o la de Login.
+         * @param {string | null} token
+         * @param {string} userName
+         */
+        function renderAuthScreen(token, userName = 'Usuario') {
+            if (token) {
+                welcomeUser.textContent = `Hola, ${userName}!`;
+                navigateTo('dashboard-screen');
+            } else {
+                navigateTo('login-screen');
+                // Limpiar siempre los mensajes al volver al login principal
+                messageBox.textContent = ''; 
+                registerMessageBox.textContent = '';
+            }
+        }
+
+        /**
+         * Muestra un mensaje de estado en un color específico.
+         * @param {HTMLElement} element - La caja de mensaje (messageBox o registerMessageBox).
+         * @param {string} message - El mensaje a mostrar.
+         * @param {boolean} isSuccess - Verdadero si es éxito (verde), falso si es error (rojo).
+         */
+        function displayMessage(element, message, isSuccess) {
+            element.textContent = message;
+            element.classList.remove('text-red-500', 'text-green-500');
+            element.classList.add(isSuccess ? 'text-green-500' : 'text-red-500');
+        }
+
+        // --- Manejadores de Eventos ---
+
+        // 1. Manejar Login (Usuario/Estudiante)
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            navigateTo(currentScreen, true); // Mostrar spinner
+
+            const dni = e.target.dni.value;
+            const password = e.target.password.value;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dni, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem(TOKEN_KEY, data.token);
+                    const userName = data.user && data.user.nombre ? data.user.nombre.split(' ')[0] : 'Estudiante';
+                    displayMessage(messageBox, 'Login exitoso', true);
+                    renderAuthScreen(data.token, userName);
+                } else {
+                    displayMessage(messageBox, data.error || 'Credenciales inválidas.', false);
+                    navigateTo('login-screen');
+                }
+            } catch (error) {
+                console.error('Error de conexión:', error);
+                displayMessage(messageBox, 'Error de red o servidor.', false);
+                navigateTo('login-screen');
+            }
+        });
+
+        // 2. Manejar Cierre de Sesión (Logout)
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem(TOKEN_KEY);
+            displayMessage(messageBox, 'Sesión cerrada exitosamente.', true);
+            renderAuthScreen(null);
+        });
+
+        // 3. Manejar Acceso a Admin Dashboard
+        adminAccessButton.addEventListener('click', () => {
+            navigateTo('admin-dashboard-screen');
+        });
+
+        // 4. Manejar Registro Manual (Secretaría)
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            displayMessage(registerMessageBox, 'Registrando usuario...', true);
+            
+            const formData = new FormData(e.target);
+            const user = Object.fromEntries(formData.entries());
+
+            // Simple validación de DNI (solo números)
+            if (isNaN(user.dni) || user.dni.length < 6) {
+                displayMessage(registerMessageBox, 'El DNI debe ser un número válido.', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(user),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayMessage(registerMessageBox, `¡Usuario ${data.user.nombre} (${data.user.rol}) registrado con éxito!`, true);
+                    e.target.reset(); // Limpiar formulario
+                    // Opcional: navegar de vuelta al dashboard de admin
+                    // setTimeout(() => navigateTo('admin-dashboard-screen'), 3000);
+                } else {
+                    displayMessage(registerMessageBox, data.error || 'Fallo al registrar usuario.', false);
+                }
+            } catch (error) {
+                console.error('Error de conexión en registro:', error);
+                displayMessage(registerMessageBox, 'Error de red o servidor durante el registro.', false);
+            }
+        });
+
+
+        // --- Inicialización ---
+
+        /**
+         * Inicialización: Comprobar si ya hay un token al cargar.
+         */
+        function initializeApp() {
+            const token = localStorage.getItem(TOKEN_KEY);
+            // Para la demo, asumimos que si hay token, estamos logueados.
+            renderAuthScreen(token, 'Estudiante Demo');
+        }
+
+        window.onload = initializeApp;
+
+    </script>
+</body>
+</html>
