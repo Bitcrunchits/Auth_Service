@@ -194,40 +194,16 @@ async syncAlumnosAndNotify() {
       throw error; // <-- Lanzamos el error para que el controlador lo atrape.
     }
   }
-//////////////////////////////////////////////////"testeo 5" ///////////////////7////////////////////////////////
-async login(identifier, password, clientIp = "127.0.0.1") {
-  console.log("🔐 [LOGIN] Iniciando proceso de login para:", identifier);
-  
-  // Primero buscar el usuario
-  const isEmail = identifier.includes('@');
-  const query = isEmail 
-    ? { email: identifier, estado: 'active' }
-    : { dni: identifier, estado: 'active' };
-  
-  console.log("🔍 [LOGIN] Buscando usuario con query:", query);
-  const user = await this.model.findOne(query).select('+password');
-  
-  console.log("👤 [LOGIN] Usuario encontrado:", user ? `Sí (${user.email})` : "No");
-  
-  // Ahora definir logAttempt cuando ya tenemos user
-  const logAttempt = async (level, message, context = {}) => {
-    console.log(`📝 [LOGIN] Intentando enviar log: ${level} - ${message}`);
-    try {
-      const logData = {
-        level,
-        user: user?.email || identifier,
-        clientIp,
-        message,
-        context
-      };
-      console.log("📤 [LOGIN] Datos del log a enviar:", JSON.stringify(logData, null, 2));
-      
-      await sendLog(logData);
-      
-      console.log("✅ [LOGIN] Log enviado exitosamente");
-    } catch (e) {
-      console.error("❌ [LOGIN] Error al enviar log:", e.message);
-      console.error("❌ [LOGIN] Stack completo:", e.stack);
+
+  async login(dni, password) {
+    const user = await this.model.findOne({ dni, estado: 'active' }).select('+password');
+    if (!user) {
+      return null;
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return null; // Contraseña incorrecta
     }
   };
   
