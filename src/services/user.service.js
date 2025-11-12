@@ -2,11 +2,10 @@ import Usuario from '../models/User.entity.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { generateToken } from './jwt.service.js'
-import AmqpLogger from './AmqpLogger.service.js';
+import { sendLog } from 'ds-logging-producer-kit';
 import CoreClientService from './CoreClient.service.js';
 import NotificationClientService from './notifyClient.service.js'; 
 import { envs } from '../config/envs.js';
-
 
 class UserService {
   constructor() {
@@ -157,8 +156,6 @@ async syncAlumnosAndNotify() {
         });
       }
     }
-
-
     // 3. Finalización y Resumen
     const summary = `Sincronización finalizada. Creados: ${count.created}, Actualizados/Reactivados: ${count.updated}, Omitidos: ${count.skipped}.`;
     AmqpLogger.info(`[${operationName}] ${summary}`, { module: envs.moduleName, summary: count });
@@ -208,19 +205,42 @@ async syncAlumnosAndNotify() {
     if (!isMatch) {
       return null; // Contraseña incorrecta
     }
-
-    // Generar el Token JWT
-    // Se asegura de que el campo 'password' NO esté incluido en el objeto retornado.
-    const userWithoutPassword = user.toObject();
-    delete userWithoutPassword.password;
-
-    const token = generateToken(userWithoutPassword);
-
-    return { user: userWithoutPassword, token }; // <--- Retorna el usuario y el token
+  };
+  
+  if (!user) {
+    console.log("⚠️ [LOGIN] Usuario no encontrado, enviando log...");
+    await logAttempt("WARN", "LOGIN_FAILED - Usuario no encontrado", { identifier });
+    return null;
   }
 
+  console.log("🔑 [LOGIN] Verificando contraseña...");
+  const isMatch = await bcrypt.compare(password, user.password);
+  console.log("🔑 [LOGIN] Contraseña válida:", isMatch ? "Sí" : "No");
 
+  if (!isMatch) {
+    console.log("⚠️ [LOGIN] Contraseña incorrecta, enviando log...");
+    await logAttempt("WARN", "LOGIN_FAILED - Contraseña incorrecta", {
+      userId: user._id.toString(),
+      identifier
+    });
+    return null;
+  }
 
+  console.log("✅ [LOGIN] Login exitoso, enviando log...");
+  await logAttempt("INFO", "LOGIN_SUCCESS", {
+    userId: user._id.toString(),
+    rol: user.rol,
+    module: envs.moduleName 
+  });
+
+  const userWithoutPassword = user.toObject();
+  delete userWithoutPassword.password;
+  const token = generateToken(userWithoutPassword);
+
+  console.log("🎫 [LOGIN] Token generado, retornando respuesta");
+  return { user: userWithoutPassword, token };
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////
   async getAll() {
     //Filtrar solo usuarios 'active' y excluir la contraseña
     return this.model.find({ estado: 'active' }).select('-password');
@@ -231,8 +251,6 @@ async syncAlumnosAndNotify() {
      * @param {object} updateData - Datos a modificar.
      * @returns {Promise<object | null>} Usuario actualizado o null.
      */
-
-
 
   //* modificar nombre usuario 
   async update(userId, updateData) {
@@ -253,7 +271,6 @@ async syncAlumnosAndNotify() {
       throw error;
     }
   }
-
   /**
  * Realiza un Borrado Lógico (Soft Delete) cambiando el estado a 'inactive'.
  * @param {string} userId - ID del usuario a "eliminar".
@@ -273,8 +290,6 @@ async syncAlumnosAndNotify() {
       throw error;
     }
   }
-
-
 };
 
 export default new UserService();
