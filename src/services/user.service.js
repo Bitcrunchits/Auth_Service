@@ -1,13 +1,19 @@
 import Usuario from '../models/User.entity.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
+<<<<<<< HEAD
 import { generateToken } from './jwt.service.js';
 // Utilizamos sendLog del kit de logging
 import { sendLog } from 'ds-logging-producer-kit';
+=======
+import { generateToken } from './jwt.service.js'
+import AmqpLogger from './AmqpLogger.service.js';
+>>>>>>> parent of b7bc2f5 (Merge pull request #10 from Bitcrunchits/feat/auth-logging/front)
 import CoreClientService from './CoreClient.service.js';
 import NotificationClientService from './notifyClient.service.js'; 
 import { envs } from '../config/envs.js';
 
+<<<<<<< HEAD
 // --- WRAPPERS DE LOGGING PARA EL SERVICE ---
 
 /**
@@ -27,6 +33,8 @@ const AmqpLogger = {
   error: (message, metadata) => logAttempt('ERROR', message, { module: envs.moduleName, ...metadata }),
   warn: (message, metadata) => logAttempt('WARN', message, { module: envs.moduleName, ...metadata }),
 };
+=======
+>>>>>>> parent of b7bc2f5 (Merge pull request #10 from Bitcrunchits/feat/auth-logging/front)
 
 class UserService {
   constructor() {
@@ -174,6 +182,8 @@ class UserService {
         });
       }
     }
+
+
     // 3. Finalización y Resumen
     const summary = `Sincronización finalizada. Creados: ${count.created}, Actualizados/Reactivados: ${count.updated}, Omitidos: ${count.skipped}.`;
     AmqpLogger.info(`[${operationName}] ${summary}`, { module: envs.moduleName, summary: count });
