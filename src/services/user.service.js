@@ -1,11 +1,32 @@
 import Usuario from '../models/User.entity.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { generateToken } from './jwt.service.js'
+import { generateToken } from './jwt.service.js';
+// Utilizamos sendLog del kit de logging
 import { sendLog } from 'ds-logging-producer-kit';
 import CoreClientService from './CoreClient.service.js';
 import NotificationClientService from './notifyClient.service.js'; 
 import { envs } from '../config/envs.js';
+
+// --- WRAPPERS DE LOGGING PARA EL SERVICE ---
+
+/**
+ * Wrapper para usar sendLog para intentos de login u otros eventos.
+ * @param {string} level - Nivel de log (INFO, ERROR, WARN).
+ * @param {string} message - Mensaje del log.
+ * @param {object} metadata - Metadatos adicionales.
+ */
+const logAttempt = (level, message, metadata) => {
+    // Asegura que todos los logs pasen por la función sendLog importada.
+    return sendLog(level, message, metadata);
+};
+
+// Objeto simple para manejar los logs dentro de syncAlumnosAndNotify
+const AmqpLogger = {
+  info: (message, metadata) => logAttempt('INFO', message, { module: envs.moduleName, ...metadata }),
+  error: (message, metadata) => logAttempt('ERROR', message, { module: envs.moduleName, ...metadata }),
+  warn: (message, metadata) => logAttempt('WARN', message, { module: envs.moduleName, ...metadata }),
+};
 
 class UserService {
   constructor() {
@@ -17,10 +38,11 @@ class UserService {
    * @returns {string} Contraseña temporal sin hashear.
    */
   _generateTemporaryPassword() {
-    // Implementación de una generación de contraseña segura (ajustada a tu necesidad)
+    // Implementación de una generación de contraseña segura
     return crypto.randomBytes(4).toString('hex'); // 8 caracteres hexadecimales
   }
-//Función auxiliar para extraer mensajes detallados de Mongoose
+
+  //Función auxiliar para extraer mensajes detallados de Mongoose
   _formatMongooseError(error) {
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map(val => val.message);
@@ -33,17 +55,18 @@ class UserService {
     }
     return error.message;
   }
+
   /**
    * Sincroniza alumnos desde el microservicio CORE, actualizando o creando usuarios
    * con rol 'alumno' y emite logs de cada operación.
    */
-async syncAlumnosAndNotify() {
+  async syncAlumnosAndNotify() {
     const operationName = 'SINC_ALUMNOS';
     AmqpLogger.info(`[${operationName}] Iniciando proceso de sincronización de alumnos con CORE.`, { module: envs.moduleName });
 
     let coreAlumnos = [];
     let count = { created: 0, updated: 0, skipped: 0, total: 0 };
-     const failedStudents = []; // Para capturar fallos internos
+    const failedStudents = []; // Para capturar fallos internos
 
     try {
       // 1. Obtener datos del microservicio CORE
@@ -61,11 +84,6 @@ async syncAlumnosAndNotify() {
     for (const alumno of coreAlumnos) {
       let failReason = ''; // Inicializamos la razón de fallo para este alumno
       try {
-        // // Asegurar que existan datos críticos antes de mapear (primera capa de validación)
-        // if (!alumno.email || !alumno.dni || !alumno.id_externo_core) {
-        //    throw new Error('Datos de alumno incompletos (requiere email, dni, id_externo_core).');
-        // }
-
         // Usaremos el DNI o el ID Externo de CORE como identificadores únicos
         const existingUser = await this.model.findOne({
           $or: [{ dni: alumno.dni }, { id_externo_core: alumno.id_externo_core }]
@@ -166,6 +184,7 @@ async syncAlumnosAndNotify() {
         summary: { ...count, failedStudentsCount: failedStudents.length, failedStudents: failedStudents } 
     };
   }
+
   async findById(id) {
     // Busca por ID y excluye la contraseña
     return await this.model.findOne({ _id: id, estado: 'active' }).select('-password');
@@ -174,17 +193,9 @@ async syncAlumnosAndNotify() {
   async register(data) {
     console.log("Iniciando la función de registro...");
     try {
-      // const { nombre, email, password, rol } = data;
-      // const newUser = new this.model({
-      //   nombre,
-      //   email,
-      //   password: password,
-      //   rol: rol,
-      // });
       const newUser = new this.model({
         ...data, // Esto incluye nombre, email, password, rol, dni, id_externo_core, etc.
       });
-
 
       const savedUser = await newUser.save(); // <-- Aquí esperamos que se guarde.
       return savedUser; // <-- Devolvemos el usuario guardado.
@@ -195,71 +206,73 @@ async syncAlumnosAndNotify() {
     }
   }
 
-  async login(dni, password) {
+  /**
+   * Intenta autenticar a un usuario usando su DNI y contraseña.
+   * @param {string} dni - Identificador único del usuario.
+   * @param {string} password - Contraseña sin hashear.
+   * @returns {Promise<{ user: object, token: string } | null>}
+   */
+  async login(dni, password) { // <-- INICIO DE LA FUNCIÓN CORRECTA
+    // 1. Busca al usuario activo por DNI e incluye el campo de contraseña
     const user = await this.model.findOne({ dni, estado: 'active' }).select('+password');
+    
+    // 2. Verificar si el usuario existe
     if (!user) {
+      console.log("⚠️ [LOGIN] Usuario no encontrado, enviando log...");
+      // Usamos 'dni' en lugar de 'identifier' que no está definido
+      await logAttempt("WARN", "LOGIN_FAILED - Usuario no encontrado", { dni }); 
       return null;
     }
+
+    // 3. Verificar la contraseña
+    console.log("🔑 [LOGIN] Verificando contraseña...");
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("🔑 [LOGIN] Contraseña válida:", isMatch ? "Sí" : "No");
 
     if (!isMatch) {
-      return null; // Contraseña incorrecta
+      console.log("⚠️ [LOGIN] Contraseña incorrecta, enviando log...");
+      await logAttempt("WARN", "LOGIN_FAILED - Contraseña incorrecta", {
+        userId: user._id.toString(),
+        dni
+      });
+      return null;
     }
-  };
-  
-  if (!user) {
-    console.log("⚠️ [LOGIN] Usuario no encontrado, enviando log...");
-    await logAttempt("WARN", "LOGIN_FAILED - Usuario no encontrado", { identifier });
-    return null;
-  }
 
-  console.log("🔑 [LOGIN] Verificando contraseña...");
-  const isMatch = await bcrypt.compare(password, user.password);
-  console.log("🔑 [LOGIN] Contraseña válida:", isMatch ? "Sí" : "No");
-
-  if (!isMatch) {
-    console.log("⚠️ [LOGIN] Contraseña incorrecta, enviando log...");
-    await logAttempt("WARN", "LOGIN_FAILED - Contraseña incorrecta", {
+    // 4. Login exitoso
+    console.log("✅ [LOGIN] Login exitoso, enviando log...");
+    await logAttempt("INFO", "LOGIN_SUCCESS", {
       userId: user._id.toString(),
-      identifier
+      rol: user.rol,
+      module: envs.moduleName 
     });
-    return null;
-  }
 
-  console.log("✅ [LOGIN] Login exitoso, enviando log...");
-  await logAttempt("INFO", "LOGIN_SUCCESS", {
-    userId: user._id.toString(),
-    rol: user.rol,
-    module: envs.moduleName 
-  });
+    // 5. Preparar respuesta
+    const userWithoutPassword = user.toObject();
+    delete userWithoutPassword.password;
+    const token = generateToken(userWithoutPassword);
 
-  const userWithoutPassword = user.toObject();
-  delete userWithoutPassword.password;
-  const token = generateToken(userWithoutPassword);
-
-  console.log("🎫 [LOGIN] Token generado, retornando respuesta");
-  return { user: userWithoutPassword, token };
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////
+    console.log("🎫 [LOGIN] Token generado, retornando respuesta");
+    return { user: userWithoutPassword, token };
+  } // <-- FIN DE LA FUNCIÓN CORRECTA
+  
+  ///////////////////////////////////////////////////////////////////////////////////////////////////
   async getAll() {
     //Filtrar solo usuarios 'active' y excluir la contraseña
     return this.model.find({ estado: 'active' }).select('-password');
   }
+
   /**
      * Modifica los datos de un usuario. Solo permite la actualización si el estado es 'active'.
      * @param {string} userId - ID del usuario a actualizar.
      * @param {object} updateData - Datos a modificar.
      * @returns {Promise<object | null>} Usuario actualizado o null.
      */
-
-  //* modificar nombre usuario 
   async update(userId, updateData) {
     try {
       const user = await this.model.findOneAndUpdate(
         { _id: userId, estado: 'active' },
         updateData,
         { new: true }
-
       ).select('-password');
 
       if (!user) {
@@ -271,6 +284,7 @@ async syncAlumnosAndNotify() {
       throw error;
     }
   }
+
   /**
  * Realiza un Borrado Lógico (Soft Delete) cambiando el estado a 'inactive'.
  * @param {string} userId - ID del usuario a "eliminar".
@@ -290,6 +304,6 @@ async syncAlumnosAndNotify() {
       throw error;
     }
   }
-};
+}
 
 export default new UserService();
